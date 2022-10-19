@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# get_temp
+# for Supermon 7+
+# Paul Aidukas KN2R (Copyright) July 2018
+# For ham radio use only, NOT for comercial use!
+#
+# 02/Jul/2018  Paul/KN2R    Initial release.
+# 12/Sep/2021  Paul/KN2R    Changed to /sys/class.
+###################################################
+
+echo -n "CPU: "
+
+CTEMP=`cat /sys/class/thermal/thermal_zone0/temp`
+CTEMP=`expr $CTEMP / 1000`
+FTEMP=$(echo 9 '*' $CTEMP / 5 + 32 | /usr/bin/bc)
+
+if [ "$FTEMP" -le "120" ]; then
+    echo -en "<span style=\"background-color: palegreen;\">"
+ elif [ "$FTEMP" -le "150" ]; then
+    echo -en "<span style=\"background-color: yellow;\">"
+ else
+    echo -en "<span style=\"font-weight: bold; color: yellow; background-color: red;\">"
+fi
+
+echo -en "&nbsp;${FTEMP}&deg;F, ${CTEMP}&deg;C </span>&nbsp; @ `date +%H:%M`&nbsp;"
+

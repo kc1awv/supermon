@@ -1,0 +1,119 @@
+#!/bin/bash
+#
+# Backup-helper for AllStar and SuperMon 5.x+
+# Paul Aidukas KN2R (Copyright) March 20, 2017
+# For ham radio use only, NOT for comercial use!
+#
+# Mar-20-2017  Paul/KN2R  Initial release.
+# Dec-02-2020  Paul/KN2R  Added Digital -d switch.
+#
+###################################################
+
+USAGE () {
+    echo
+    echo ">> SMBACKUP - backup helper tool <<"
+    echo
+    echo "Usage: `basename $0` [-s -u -d | -a] [-v] | [-h]"
+    echo
+    echo " Options:  -s = Include asterisk Sounds dir"
+    echo "           -u = Include User home dirs"
+    echo "           -d = Include Digital system & files (if installed)"
+    echo "           -a = Include All of the above options (-s -u -d)"
+    echo "           -v = Enable tar Verbosity"
+    echo "           -h = Display this really useful Help message ;)"
+}
+[ -z "$1" ] && USAGE
+
+Pwd=`pwd`; V=""
+
+for i in "$@"
+do
+
+    if [ "$i" == "-s" ]; then
+        SOUNDS=YES
+    fi
+
+    if [ "$i" == "-u" ]; then
+        HOMEDIRS=YES
+    fi
+
+    if [ "$i" == "-d" ]; then
+        DIGITAL=YES
+    fi
+
+    if [ "$i" == "-a" ]; then
+        SOUNDS=YES; HOMEDIRS=YES; DIGITAL=YES
+    fi
+
+    if [ "$i" == "-v" ]; then
+        V="v" # Verbose
+    fi
+
+    if [ "$i" == "-h" ]; then
+        USAGE; echo; exit 0
+    fi
+    shift
+
+done
+
+echo -en "\nCleaning up old backups ... "
+cd /root
+rm -f asterisk.tgz
+rm -f sbin.tgz
+rm -f http.tgz
+rm -f dvswitch.tgz
+echo "Done."
+
+if [ "$HOMEDIRS" == "YES" ]; then
+    echo -n "Backing up /home"
+    rm -f /root/home.tgz
+    cd /
+    mv /root/sounds.tgz /
+    echo -n ", /root ... "
+    tar cz${V}pf /home.tgz home root etc/lighttpd etc/rc.local
+    mv /home.tgz /root/
+    mv /sounds.tgz /root/
+    echo "Done."
+fi
+
+if [ "$SOUNDS" == "YES" ]; then
+    echo -n "Backing up /var/log/asterisk/sounds ... "
+    rm -f /root/sounds.tgz
+    cd /
+    tar cz${V}pf /root/sounds.tgz var/lib/asterisk/sounds
+    echo "Done."
+fi
+
+echo -n "Backing up /etc/asterisk ... "
+cd /
+tar cz${V}pf /root/asterisk.tgz etc/asterisk
+echo "Done."
+
+cd /
+if [ -d /usr/local/bin/AUTOSKY ]; then
+    echo -n "Backing up /usr/local/sbin, /usr/local/bin/AUTOSKY, /usr/lib/cgi-bin/sm_lsnodes ... "
+    tar cz${V}pf /root/sbin.tgz usr/local/sbin usr/lib/cgi-bin/sm_lsnodes usr/local/bin/AUTOSKY
+ else
+    echo -n "Backing up /usr/local/sbin, /usr/lib/cgi-bin/sm_lsnodes ... "
+    tar cz${V}pf /root/sbin.tgz usr/local/sbin usr/lib/cgi-bin/sm_lsnodes
+fi
+echo "Done."
+
+echo -n "Backing up /var/www ... "
+cd /
+tar cz${V}pf /root/http.tgz var/www 
+# echo -e "Done.\n and"
+echo -e "Done."
+
+if [ "$DIGITAL" == "YES" -a -d /opt/Analog_Bridge ]; then
+    echo -n "Backing up /opt ... "
+    cd /
+    tar cz${V}pf /root/dvswitch.tgz opt
+    echo -e "Done."
+fi
+
+sync; sync; sync
+# /usr/local/sbin/savenode.sh
+cd $Pwd; echo
+
+

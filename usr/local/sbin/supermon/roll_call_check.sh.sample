@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# Program: roll_call_check.sh
+# Author:  Paul Aidukas KN2R (Copyright) July 21, 2020
+#
+# Send Email & audio Alerts when nodes fail roll-call.
+# This program written by request of: Chris, AB7BS.
+#
+# Usage: roll_call_check.sh [-d]
+# The -d option will invoke DEBUG display mode for testing.
+#
+# This program should be run from /etc/rc.local file on the Local Node.
+# Place the following line in this file near the bottom just above the "exit 0" line:
+#
+# "(sleep 180; /usr/local/sbin/roll_call_check.sh) &"
+#
+# 21-Jul-2020  Paul/KN2R  Initial release.
+# 30-Jul-2020  Paul/KN2R  Added node Alert Audio & Descriptions.
+# 01-Aug-2020  Paul/KN2R  Added "Roll-Call.ini" configuration file.
+# 02-Aug-2020  Paul/KN2R  Added Email sender From: field.
+#
+############################################################
+
+LocalNode="2577"           # Set this to the local node number to monitor.
+SleepTime=5                # Set this to the loop delay time in seconds. 900=15 minutes.
+SENDER="root@localhost"    # Email alerts From: sender.
+RECEIVER="root@localhost"  # Email alerts To: receiver.
+
+Roll_Call_INI="/var/www/html/supermon/Roll-Call.ini"  # Where you set your Roll-Call node information.
+
+############################################################
+
+[ "$1" = "-d" ] && DEBUG=1
+rm -rf /tmp/Roll-Call; mkdir -p /tmp/Roll-Call
+ROLL_CALL=`cat $Roll_Call_INI |egrep -v '^$|^#' |awk -F"|" '{print $1}'`
+[ "$DEBUG" = 1 ] &&  echo -e "\nROLL_CALL nodes:" $ROLL_CALL "\n"
+
+while :
+  do
+     for NODE in $ROLL_CALL
+       do
+          touch /tmp/Roll-Call/$NODE
+          AUDIO_UP=`cat $Roll_Call_INI |grep ^$NODE"|" |awk -F"|" '{print $2}'`
+          AUDIO_DOWN=`cat $Roll_Call_INI |grep ^$NODE"|" |awk -F"|" '{print $3}'`
+          DESC=`cat $Roll_Call_INI |grep ^$NODE"|" |awk -F"|" '{print $4}'`
+          STATUS=`/usr/sbin/asterisk -rx "rpt xnode $LocalNode" |grep ESTABLISHED |sed 's/\~/\n/g' |grep ^$NODE`
+          NODECHK=$(</tmp/Roll-Call/$NODE)
+          [ "$DEBUG" = 1 ] &&  echo -e "Status: $STATUS"
+          if [ -z "$STATUS" ]; then
+              if [ "$NODECHK" == "PASSED" ]; then
+                  [ "$DEBUG" = 1 ] && echo -e "Warning: Node $NODE $DESC FAILED roll-call.\n\nSending EMAIL ALERT:"
+                  ML="Subject: Warning node $NODE $DESC FAILED roll-call\nTo: $RECEIVER\nFrom: $SENDER\n\nWarning: Node $NODE $DESC FAILED roll-call.\n"
+                  [ "$DEBUG" = 1 ] && echo -e "$ML"
+                  echo -e "$ML" |sendmail -t 
+                  /usr/sbin/asterisk -rx "rpt playback $LocalNode $AUDIO_DOWN"
+                  echo "FAILED" >/tmp/Roll-Call/$NODE
+                else
+                  [ "$DEBUG" = 1 ] && echo -e "Warning: Node $NODE $DESC FAILED roll-call."
+                  echo "FAILED" >/tmp/Roll-Call/$NODE
+              fi
+           elif [ -n "$STATUS" ]; then
+              if [ "$NODECHK" == "FAILED" ]; then
+                  [ "$DEBUG" = 1 ] && echo -e "Notice: Node $NODE $DESC PASSED roll-call.\n\nSending EMAIL ALERT:"
+                  ML="Subject: Notice node $NODE $DESC PASSED roll-call\nTo: $RECEIVER\nFrom: $SENDER\n\nNotice: Node $NODE $DESC PASSED roll-call.\n" 
+                  [ "$DEBUG" = 1 ] && echo -e "$ML"
+                  echo -e "$ML" |sendmail -t 
+                  /usr/sbin/asterisk -rx "rpt playback $LocalNode $AUDIO_UP"
+                  echo "PASSED" >/tmp/Roll-Call/$NODE
+                else
+                  [ "$DEBUG" = 1 ] && echo -e "Notice: Node $NODE $DESC PASSED roll-call."
+                  echo "PASSED" >/tmp/Roll-Call/$NODE
+              fi
+          fi
+          [ "$DEBUG" = 1 ] &&  echo
+       done
+     [ "$DEBUG" = 1 ] && echo -n "Sleeping $SleepTime seconds ... "
+     sleep $SleepTime
+     [ "$DEBUG" = 1 ] && echo -e "\n"
+  done
+
+# The end ;)
+############################################################
+
+

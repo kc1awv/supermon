@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Program: fix_clearnode
+#  Author: Paul Aidukas KN2R (Copyright) August 14, 2020
+#
+# Turn on ClearNode Radio and set to low power output.
+# Place the following line in your /etc/rc.local file:
+#
+#  /usr/local/sbin/supermon/fix_clearnode
+#
+# 14-Aug-2020  Paul/KN2R  Initial release.
+#
+#########################################################
+
+gpio mode 0 out  # Turn On gpio 0.
+gpio mode 2 out  # Turn On gpio 2.
+
+gpio write 0 0  # Set to 0 for low power, 1 for high power.
+gpio write 2 1  # Set to 1 to Turn Radio power On, 0 for Off.
+
+# The end ;)
+#########################################################
+
+

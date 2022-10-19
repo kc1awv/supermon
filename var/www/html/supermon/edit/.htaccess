@@ -1,0 +1,5 @@
+AuthType Basic
+AuthName Supermon_7+_Access
+AuthUserFile /var/www/html/supermon/edit/.htpasswd
+require valid-user
+

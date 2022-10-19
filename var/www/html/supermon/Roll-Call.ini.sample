@@ -1,0 +1,13 @@
+# Roll_Call.ini:
+#
+# There are four columns separated by a vertical bar "|":
+#
+# NODE-Number|Audio-PASSED-filename|Audio-FAILED-filename|Description . . .
+#
+# This is an example file.
+#
+############################################################################
+
+27034|27034-passed|27034-failed|KN2R HUB-2
+27945|27945-passed|27945-failed|KN2R 146.610- VHF RPT
+

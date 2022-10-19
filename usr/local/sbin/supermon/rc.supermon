@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Setup Supermon 6+ for AllStar releases.
+# Author: Paul Aidukas KN2R (Copyright) Feb 9, 2013
+#
+####################################################
+
+# KN2R 06/22/2018 - Added irlp loadcalls.
+# KN2R 03/22/2019 - Refactoring.
+
+# Log IP address to iplog.txt file:
+(sleep 26; /usr/local/sbin/supermon/logip) &
+
+# Get EchoLink database:
+if [ -f /etc/asterisk/echolink.conf ]; then
+   (sleep 38; /usr/local/sbin/supermon/echoupdate) &
+fi
+
+# Get IRLP database:
+if [ -f /etc/asterisk/irlp.conf ]; then
+   (sleep 44; /usr/local/sbin/supermon/irlpupdate; rm -f /var/log/irlp/IRLP_Status; [ -f /home/irlp/custom/loadcalls ] && /bin/su -c "/home/irlp/custom/loadcalls" - repeater) &
+fi
+
+#
+# The End ;)
+##############
+

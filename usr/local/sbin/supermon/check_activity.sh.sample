@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Program: check_activity.sh
+# Author:  Paul Aidukas KN2R (Copyright) July 12, 2020
+#
+# Turn GPIO (LED) On or Off when any nodes are connected or not.
+#
+# 12-Jul-2020  Paul/KN2R  Initial release.
+# 20-Jul-2020  Paul/KN2R  Added DEBUG mode [-d] switch.
+#
+##################################################################
+
+GPIONumber=2  # Set GPIO number to use for all local nodes
+SleepTime=10  # Program loop sleep-time in seconds
+
+[ "$1" = "-d" ] && DEBUG=1
+LocalNodes=`/bin/asterisk -rx "rpt localnodes" |egrep -v '^$|^Node|^----'`
+[ "$DEBUG" = 1 ] &&  echo -e "\nLocal Node(s) found:" $LocalNodes
+
+while :
+  do
+    for Node in $LocalNodes
+      do
+         Mode=`/bin/asterisk -rx "rpt xnode $Node" |grep ESTABLISHED |sed 's/\~/\n/g'`
+         [ "$DEBUG" = 1 ] &&  echo -en "\n$Node $Mode"
+         if [ -n "$Mode" ]; then
+             /bin/asterisk -rx "rpt cmd $Node cop 62 GPIO${GPIONumber}=1"
+             [ "$DEBUG" = 1 ] && echo -e "\nSet node $Node GPIO${GPIONumber}=1"
+           else
+             /bin/asterisk -rx "rpt cmd $Node cop 62 GPIO${GPIONumber}=0"
+             [ "$DEBUG" = 1 ] && echo -e "\nSet node $Node GPIO${GPIONumber}=0"
+         fi
+      done
+    [ "$DEBUG" = 1 ] && echo -en "\nSleeping $SleepTime seconds ... "
+    sleep $SleepTime; echo
+  done
+
+# The End ;)
+###########################################################
+
+

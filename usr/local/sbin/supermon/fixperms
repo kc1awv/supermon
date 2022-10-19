@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# fixperms: Paul Aidukas KN2R (Copyright) April 27, 2015
+# Make sure all config files are editable in Supermon.
+# For ham radio use only, NOT for comercial use!
+#
+# 27-Apr-2015  Paul/KN2R  Initial Release.
+# 21-Nov-2017  Paul/KN2R  Added IRLP.
+# 13-Aug-2018  Paul/KN2R  Added AutoSky.
+#
+##########################################################
+
+# Web server group
+WebGrp="www-data"
+
+# in /etc/asterisk/
+AstFiles="*.conf*"
+
+# in /var/www/html/supermon/
+SMFiles="*.ini* *.css* global.inc* footer.inc* header.inc*"
+
+# in /etc/asterisk/local/
+OtherFiles2="privatenodes.txt*"
+
+# in /usr/local/bin/AUTOSKY/
+OtherFiles3="AutoSky.ini*"
+
+# in /home/irlp/scripts/
+# IRLPFiles1="irlp.crons"
+
+# in /home/irlp/custom/
+# IRLPFiles2="environment custom_decode custom.crons timeoutvalue timing lockout_list"
+
+cd /etc/asterisk
+echo -n "asterisk "
+chmod g+w . $AstFiles
+chgrp $WebGrp . $AstFiles
+
+if [ -f /etc/wpa_supplicant/*.conf ]; then
+   cd /etc/wpa_supplicant/
+   echo -n "wireless "
+   chmod g+w . $AstFiles
+   chgrp $WebGrp . $AstFiles
+fi
+
+cd /var/www/html/supermon
+echo -n "supermon "
+chmod g+w . $SMFiles $OtherFiles2
+chgrp $WebGrp . $SMFiles $OtherFiles2
+
+if [ -d /usr/local/bin/AUTOSKY ]; then
+    cd /usr/local/bin/AUTOSKY
+    echo -n "AutoSky "
+    chmod g+w . $OtherFiles3
+    chgrp $WebGrp . $OtherFiles3
+fi
+
+if [ -d /opt/Analog_Bridge ]; then
+    echo -n "Digital"
+    cd /opt/Analog_Bridge
+    chmod g+w . Analog_Bridge.ini
+    chgrp $WebGrp . Analog_Bridge.ini
+    echo -n "."
+    cd /opt/MMDVM_Bridge
+    chmod g+w . DVSwitch.ini MMDVM_Bridge.ini
+    echo -n "."
+    chgrp $WebGrp . DVSwitch.ini MMDVM_Bridge.ini
+    echo -n ". "
+fi
+
+if [ -d /home/irlp ]; then
+    cd /home/irlp/scripts
+    echo -n "scripts "
+    chmod g+w . $IRLPFiles1
+    chgrp $WebGrp . $IRLPFiles1
+    if [ -f /home/irlp/noupdate/scripts/irlp.crons ]; then
+        cd /home/irlp/noupdate/scripts
+        echo -n "noupdate/scripts "
+        chmod g+w . irlp.crons
+        chgrp $WebGrp . irlp.crons
+    fi
+    cd /home/irlp/custom
+    echo -n "custom "
+    chmod g+w . $IRLPFiles2
+    chgrp $WebGrp . $IRLPFiles2
+fi
+
+# Cleanup old files:
+CLNUP="/var/www/html/supermon"; MIM=".php"
+FLS=" ast_reload stats asteronoff astlog dtmf fastrestart linuxlog pi-gpio reboot webacclog"
+for i in $FLS
+ do
+    rm -f "${CLNUP}/${i}.${MIM}"
+ done
+
+rm -f "${CLNUP}/edit/control*.php*"
+
+echo
+
+# EOF
+###################################
+

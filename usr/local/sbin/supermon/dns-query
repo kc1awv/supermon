@@ -1,0 +1,85 @@
+#!/bin/bash
+# set -o errexit
+
+######################################################
+SCRIPT_VERSION="Get node DNS info from ASL  v.1.6.0" #
+SCRIPT_AUTHOR="N4IRS"                                #
+SCRIPT_DATE="05/18/2021"                             #
+######################################################
+# 05/22/2021  Paul/KN2R  Minor display output change #
+######################################################
+
+if [ "$1" != "" ]; then
+    case $1 in
+        -v|-V|--version) echo $SCRIPT_VERSION; exit 0 ;;
+        -a|-A|--author)  echo $SCRIPT_AUTHOR;  exit 0 ;;
+        -d|-D|--date)    echo $SCRIPT_DATE;    exit 0 ;;
+                   *)    ;;
+    esac
+fi
+
+# Notes
+
+# need to add code for "TIMEOUT"
+
+# dig -t txt 2152.nodes.allstarlink.org +short
+# "NN=2152" "RT=2021-05-18 12:33:52" "RB=0" "IP=104.168.46.105" "PIP=0" "PT=4569" "RH=register-west"
+# array=`dig -t txt $1.nodes.allstarlink.org +short`
+
+# root@server:~# ./dns-query 9952
+# Host 9952.nodes.allstarlink.org not found: 3(NXDOMAIN)
+
+# root@server:~# ./dns-query 9952
+# ;; connection timed out; no servers could be reached
+
+
+# Start script
+array=(`host -t txt $1.nodes.allstarlink.org`); Exit_Code=$?
+# 2152.nodes.allstarlink.org descriptive text "NN=2152" "RT=2021-05-17 23:03:21" "RB=0" "IP=104.168.46.105" "PIP=0" "PT=4569" "RH=register-west"
+
+case $Exit_Code in
+    0) ;;
+    1) printf '%s\n' "-ER|NOT FOUND"; exit 1;;
+    *) do_something_else;;
+esac
+
+# NN is node number
+# RT is the last update registration time
+# RB is 0 for node is not a remote base, RB is 1 if it is a remote base
+# IP is the IP address of the node
+# PIP is the proxy IP of the node if set
+# PT is the port
+# RH is the registration server the node last registered to.
+
+# echo ${array[0]}
+# 2152.nodes.allstarlink.org
+
+# echo ${array[3]}
+# "NN=2152"
+NodeNumber=${array[3]}
+NN="${NodeNumber%\"}"
+NN="${NN#\"}"
+NodeNumber=(`echo $NN |sed 's/.*=//g'`)
+##echo $NodeNumber
+
+# echo ${array[7]}
+# "IP=104.168.46.105"
+IPAddress=${array[7]}
+IP="${IPAddress%\"}"
+IP="${IP#\"}"
+IPAddress=(`echo $IP |sed 's/.*=//g'`)
+##echo $IPAddress
+
+# echo ${array[9]}
+# "PT=4569"
+Port=${array[9]}
+PT="${Port%\"}"
+PT="${PT#\"}"
+Port=(`echo $PT |sed 's/.*=//g'`)
+##echo $Port
+
+# echo "+OK|radio@$IPAddress:$Port,$IPAddress"
+echo "+OK|radio@$IPAddress:$Port/$NodeNumber,$IPAddress"
+exit 0
+
+

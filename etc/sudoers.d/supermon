@@ -1,0 +1,8 @@
+# Cmnd alias added for Supermon 7+:
+Cmnd_Alias SMASTERISK = /usr/bin/top, /sbin/ifconfig, /bin/df, /usr/sbin/asterisk, \
+  /bin/systemctl, /usr/local/sbin/supermon/echolookup, /usr/bin/killall, /sbin/reboot, \
+  /usr/local/sbin/supermon/astlookup, /usr/local/sbin/supermon/ssinfo
+User_Alias SMADMINS = www-data
+SMADMINS ALL = NOPASSWD: SMASTERISK
+Defaults    !requiretty
+
